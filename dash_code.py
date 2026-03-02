@@ -11,6 +11,14 @@ AQI_FILE = {f"{DASHBOARD_DIR}/aqi.csv"}
 
 outcomes = pd.read_csv("outcomes.csv")
 
+color_palette = [
+    "#cf1020", # 
+    "#A4343A", # 
+    "#800000", # 
+    "#550000", # 
+    "#2c1608"  # 
+]
+
 health_long = outcomes.melt(
     id_vars="County",
     value_vars=[
