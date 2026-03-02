@@ -47,10 +47,6 @@ health_outcomes = [col for col in outcomes_df.columns if col not in ["County", "
 
 
 ##User Inputs
-
-param = st.selectbox("Select Health Outcome", ["Asthma Incidence", "COPD Deaths", "COVID Deaths", "Heart Failures", "Stroke Deaths"])
-st.subheader(f"Selected View: {param}")
-
 color_palette = [
     "#cf1020",  
     "#A4343A",  
@@ -59,12 +55,20 @@ color_palette = [
     "#2c1608"    
 ]
 
+param = st.sidebar.multiselect(
+    "Select Health Outcome:", 
+    options=sorted(health_long["Health Outcome"].unique()),
+    default=sorted(health_long["Health Outcome"].unique())
+)
+
+st.subheader(f"Selected View: {param}")
+
 filtered_health = health_long[health_long["Health Outcome"].isin(param)]
 
 if len(param) == 0:
     st.warning("Please select at least one health outcome.")
 else:
-    carb_chart = alt.Chart(health_long).mark_line(point=True).encode(
+    carb_chart = alt.Chart(filtered_health).mark_line(point=True).encode(
         x=alt.X("County:N", title="Counties", sort=None),
         y=alt.Y("Rate:Q", title="Death/Incidence Rates"),
         color=alt.Color("Health Outcome:N",
