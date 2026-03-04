@@ -7,9 +7,8 @@ DASHBOARD_DIR = "data/derived-data"
 HEALTH_FILE = {f"{DASHBOARD_DIR}/outcomes.csv"}
 AQI_FILE = {f"{DASHBOARD_DIR}/aqi.csv"}
 
-outcomes = pd.read_csv("outcomes.csv")
+outcomes = pd.read_csv("data/derived-data/outcomes.csv")
 aqi = pd.read_csv("daily_aqi_by_county_2025.csv")
-
 
 st.set_page_config(page_title="Illinois Emissions and Health Dashboard", layout="wide")
 
@@ -37,95 +36,62 @@ if section == "Health Outcomes":
     st.header("Health Outcomes in Top 20 Carbon-Emitting Counties")
     st.write("This visualization compares the most common health outcomes associated with carbon emissions across Illinois counties, organized from highest emitting counties to least.")
 
-    health_long = outcomes.melt(
-        id_vars="County",
-        value_vars=[
-            "Asthma Incidence",
-            "COPD Deaths",
-            "COVID Deaths",
-            "Heart Failures",
-            "Stroke Deaths",
-        ],
-        var_name="Health Outcome",
-        value_name="Rate"
-    )
+st.set_page_config(page_title="")
 
-    outcome_select = st.sidebar.multiselect(
-        "Selected Health Outcomes:",
-        options=sorted(health_long["Health Outcome"].unique()),
-        default=sorted(health_long["Health Outcome"].unique())
-    )
+st.title("Defining Parameters of Carbon Emissions and their Effects on Community Health in Illinois by County")
+st.write("How do varying carbon emissions affect the AQI of Illinois and what effects do they have on health? We generated graphs tracking various factors, measured by county.")
 
-    if len(outcome_select) > 0:
-        select = ", ".join(outcome_select)
-        st.markdown(f"Showing: {select}")
-    else:
-        st.warning("Please select at least one health outcome.")
+##Load Data
+@st.cache_data
+def load_outcomes():
+    outcomes = pd.read_csv("data/derived-data/outcomes.csv")
+    return outcomes
 
-    health_select = health_long[health_long["Health Outcome"].isin(outcome_select)]
+@st.cache_data
+def load_aqi():
+    aqi = pd.read_csv("data/derived-data/aqi.csv")
+    return aqi
 
-    if len(outcome_select) > 0:
-        carb_chart = alt.Chart(health_select).mark_line(point=True).encode(
-            x=alt.X("County:N", title="Counties", sort=None),
-            y=alt.Y("Rate:Q", title="Death/Incidence Rates"),
-            color=alt.Color("Health Outcome:N",
-                        scale=alt.Scale(range=color_palette),
-                        title="Health Outcome"),
-            tooltip=["County", "Rate", "Health Outcome"]
-        ).properties(
-        width=600,
-        height=400,
-        title="Health Outcomes Rates by County from Most to Least (Top 20 Carbon Emitting in Illinois)"
-        )
+outcomes_df = load_outcomes()
+aqi_df = load_aqi()
+
+health_outcomes = [col for col in outcomes_df.columns if col not in ["County", "Total Direct Emissions", "Population"]]
 
         st.altair_chart(carb_chart, use_container_width=True)
 
+##User Inputs
+color_palette = [
+    "#cf1020",  
+    "#A4343A",  
+    "#800000",  
+    "#550000",  
+    "#2c1608"    
+]
 
-elif section == "Air Quality Index (AQI)":
+param = st.sidebar.multiselect(
+    "Select Health Outcome:", 
+    options=sorted(health_long["Health Outcome"].unique()),
+    default=sorted(health_long["Health Outcome"].unique())
+)
 
-    st.header("Air Quality Index (AQI) by Defining Parameter")
-    st.write("This chart displays AQI levels across Illinois counties, organized from most emitting counties to least, separated by deifning pollutants." \
-    "" \
-    "By separating by pollutant, we can identify which contaminants are driving poor air quality in specific counties.")
+st.subheader(f"Selected View: {param}")
 
-    aqi_chart = alt.Chart(aqi).mark_bar().encode(
-        x=alt.X("County:N", title="Counties in Illinois", sort=None),
-        y=alt.Y("AQI:Q", title="Air Quality Index (AQI)"),
-        color=alt.Color("Defining Parameter:N",
-                    scale=alt.Scale(range=color_palette),
-                    legend=alt.Legend(title="Defining Parameters")),
-    tooltip=[
-        alt.Tooltip("County:N"),
-        alt.Tooltip("AQI:Q"),
-        alt.Tooltip("Defining Parameter:N")
-    ]
+filtered_health = health_long[health_long["Health Outcome"].isin(param)]
+
+if len(param) == 0:
+    st.warning("Please select at least one health outcome.")
+else:
+    carb_chart = alt.Chart(filtered_health).mark_line(point=True).encode(
+        x=alt.X("County:N", title="Counties", sort=None),
+        y=alt.Y("Rate:Q", title="Death/Incidence Rates"),
+        color=alt.Color("Health Outcome:N",
+                        scale=alt.Scale(range=color_palette),
+                        title="Health Outcome"),
+        tooltip=["County", "Rate", "Health Outcome"]
     ).properties(
         width=600,
         height=400,
-        title="AQI of Illinois Counties by Defining Parameters"
+        title="Health Outcomes Rates by County from Most to Least (Top 20 Carbon Emitting in Illinois)"
     )
 
-    st.altair_chart(aqi_chart, use_container_width=True)
-
-st.markdown("---")
-
-with st.expander("Methodology & Notes"):
-    st.markdown("""
-    **Data Sources**
-    - Environmental Protection Agency (EPA)
-    - Centers for Disease Control and Prevention (CDC)
-    - Illinois General Assembly (ILGA)
-    
-    **Data Processing**
-    - Counties were standardized by direct carbon emissions for merging.
-    - Health outcomes were filtered to top 20 carbon-emitting counties.
-    - Incidence and death rates were calculated to allow cross-county comparison.
-    - Datasets were reshaped into long format for visualization aid using Altair.
-    
-    **Policy Implications**
-    - Identifies counties with overlapping environmental and health burdens.
-    - Facilitates targeted pollutant regulation intervention.
-    - Establishes standards for emissions typing and tracking
-    """)
-
-st.caption("University of Chicago, Harris School of Public Policy")
+    st.altair_chart(carb_chart, use_container_width=True)
