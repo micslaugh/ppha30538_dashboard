@@ -8,7 +8,7 @@ HEALTH_FILE = {f"{DASHBOARD_DIR}/outcomes.csv"}
 AQI_FILE = {f"{DASHBOARD_DIR}/aqi.csv"}
 
 outcomes = pd.read_csv("data/derived-data/outcomes.csv")
-aqi = pd.read_csv("daily_aqi_by_county_2025.csv")
+aqi = pd.read_csv("data/derived-data/aqi.csv")
 
 st.set_page_config(page_title="Illinois Emissions and Health Dashboard", layout="wide")
 
@@ -41,6 +41,19 @@ st.set_page_config(page_title="")
 st.title("Defining Parameters of Carbon Emissions and their Effects on Community Health in Illinois by County")
 st.write("How do varying carbon emissions affect the AQI of Illinois and what effects do they have on health? We generated graphs tracking various factors, measured by county.")
 
+health_long = outcomes.melt(
+    id_vars="County",
+    value_vars=[
+        "Asthma Incidence",
+        "COPD Deaths",
+        "COVID Deaths",
+        "Heart Failures",
+        "Stroke Deaths",
+    ],
+    var_name="Health Outcome",
+    value_name="Rate"
+)
+
 ##Load Data
 @st.cache_data
 def load_outcomes():
@@ -56,8 +69,7 @@ outcomes_df = load_outcomes()
 aqi_df = load_aqi()
 
 health_outcomes = [col for col in outcomes_df.columns if col not in ["County", "Total Direct Emissions", "Population"]]
-
-        st.altair_chart(carb_chart, use_container_width=True)
+#st.altair_chart(carb_chart, use_container_width=True)
 
 ##User Inputs
 color_palette = [
