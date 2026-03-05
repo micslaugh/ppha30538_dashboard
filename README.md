@@ -18,7 +18,7 @@ This project processes and visualizes carbon emissions by county in Illinois and
 
 **Key Findings**
 > This exploratory analysis shows correlations with poor air quality and higher cancer incidence, asthma incidence, COPD deaths, COVID-19 deaths, heart failures, and stroke deaths
-> CO, NO<sub>2<sub>, and ozone contributed the most to poor air quality in the highest emitting counties
+> CO, NO<sub>2</sub>, and ozone contributed the most to poor air quality in the highest emitting counties
 > The highest emitting counties had a positive correlation of direct carbon emissions and more severe health outcomes
 
 # Setup
