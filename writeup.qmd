@@ -21,6 +21,7 @@ output:
   eval: false
 execute: 
   echo: false
+execute-dir: project
 ---
 
 Micah Slaughter (micslaugh) and Jonathan Kacvinsky (kacvinsky11), section 2 - Monday/Wednesday 10:30-11:50
@@ -31,6 +32,8 @@ Micah Slaughter (micslaugh) and Jonathan Kacvinsky (kacvinsky11), section 2 - Mo
 import geopandas as gpd
 import pandas as pd
 from pathlib import Path
+import matplotlib.pyplot as plt
+import shapely
 from shapely import wkt
 import numpy as np
 import altair as alt 
@@ -68,7 +71,9 @@ def display_altair_png(chart, scale=2):
         tmp.flush()
         display(Image(filename=tmp.name))
 
-script_dir = Path(__file__).parent
+script_dir = Path.cwd()
+# data_path = base_dir / "data" / "file.csv"
+# script_dir = Path(__file__).parent
 
 #Preprocessing script
 
@@ -83,15 +88,14 @@ files = [
 cancer_df = pd.DataFrame()
 
 for file in files:
-    raw_cancer = script_dir / f"../data/raw-data/{file}.csv"
-    output_cancer = script_dir / f"../data/derived-data/{file}_filtered.csv"
+    raw_cancer = script_dir / f"data/raw-data/{file}.csv"
+    output_cancer = script_dir / f"data/derived-data/{file}_filtered.csv"
     
     df = pd.read_csv(raw_cancer)
 
     cancer_col = df.columns[6]
 
     df = df[["CountyFIPS", "County", cancer_col]]
-    
     df = df.rename(columns={cancer_col: file})
     
     if cancer_df.empty:
@@ -118,13 +122,13 @@ cancer_df = cancer_df.melt(
     var_name='Cancer Type',
     value_name='Incidence')
 
-final_output = script_dir / "../data/derived-data/combined_cancer_by_county.csv"
+final_output = script_dir / "data/derived-data/combined_cancer_by_county.csv"
 
 cancer_df.to_csv(final_output, index=False) 
 
 # Cleaning crude prevalence of COPD by county
-raw_copd = script_dir / '../data/raw-data/crude_COPD.csv'
-output_copd = script_dir / '../data/derived-data/COPD_filtered.csv'
+raw_copd = script_dir / 'data/raw-data/crude_COPD.csv'
+output_copd = script_dir / 'data/derived-data/COPD_filtered.csv'
 
 copd_df = pd.read_csv(raw_copd)
 
@@ -133,8 +137,8 @@ copd_filtered = copd_df[["CountyFIPS", "County", "Year", "Value"]]
 copd_filtered.to_csv(output_copd, index=False)
 
 # Cleaning crude prevalance of asthma by county
-raw_asthma = script_dir / '../data/raw-data/crude_asthma.csv'
-output_asthma = script_dir / '../data/derived-data/asthma_filtered.csv'
+raw_asthma = script_dir / 'data/raw-data/crude_asthma.csv'
+output_asthma = script_dir / 'data/derived-data/asthma_filtered.csv'
 
 asthma_df = pd.read_csv(raw_asthma)
 
@@ -144,8 +148,8 @@ asthma_filtered.to_csv(output_asthma, index=False)
 
 # Loading carbon emissions file
 
-raw_ghgp = script_dir / '../data/raw-data/ghgp_data_2021.xlsx'
-output_ghgp = script_dir / '../data/derived-data/ghgp.csv'
+raw_ghgp = script_dir / 'data/raw-data/ghgp_data_2021.xlsx'
+output_ghgp = script_dir / 'data/derived-data/ghgp.csv'
 
 # Cleaning carbon emissions
 
@@ -181,8 +185,8 @@ ghgp.to_csv(output_ghgp, index=False)
 
 # Loading AQI file
 
-raw_aqi = script_dir / '../data/raw-data/daily_aqi_by_county_2025.csv'
-output_aqi = script_dir / '../data/derived-data/aqi.csv'
+raw_aqi = script_dir / 'data/raw-data/daily_aqi_by_county_2025.csv'
+output_aqi = script_dir / 'data/derived-data/aqi.csv'
 
 # Cleaning AQI file
 
@@ -199,8 +203,8 @@ aqi.to_csv(output_aqi, index=False)
 
 # Loading Stroke file
 
-raw_stroke = script_dir / '../data/raw-data/heart_stroke_mortality.csv'
-output_stroke = script_dir / '../data/derived-data/stroke.csv'
+raw_stroke = script_dir / 'data/raw-data/heart_stroke_mortality.csv'
+output_stroke = script_dir / 'data/derived-data/stroke.csv'
 
 # Cleaning Stroke file
 
@@ -219,8 +223,8 @@ stroke.to_csv(output_stroke, index=False)
 
 # Loading Heart file
 
-raw_heart = script_dir / '../data/raw-data/heart_stroke_mortality.csv'
-output_heart = script_dir / '../data/derived-data/heart.csv'
+raw_heart = script_dir / 'data/raw-data/heart_stroke_mortality.csv'
+output_heart = script_dir / 'data/derived-data/heart.csv'
 
 # Cleaning Heart file
 
@@ -239,8 +243,8 @@ heart.to_csv(output_heart, index=False)
 
 # Loading COVID file
 
-raw_covid = script_dir / '../data/raw-data/us-counties.csv'
-output_covid = script_dir / '../data/derived-data/covid.csv'
+raw_covid = script_dir / 'data/raw-data/us-counties.csv'
+output_covid = script_dir / 'data/derived-data/covid.csv'
 
 # Cleaning COVID file
 
@@ -256,8 +260,8 @@ cov.to_csv(output_covid, index=False)
 
 # Loading Population file
 
-raw_pop = script_dir / '../data/raw-data/population_illinois.xlsx'
-output_pop = script_dir / '../data/derived-data/population.csv'
+raw_pop = script_dir / 'data/raw-data/population_illinois.xlsx'
+output_pop = script_dir / 'data/derived-data/population.csv'
 
 #Illinois Population by County
 
@@ -276,7 +280,7 @@ pop["County"] = (pop["County"]
 
 pop.to_csv(output_pop, index=False)
 
-output_outcomes = script_dir / '../data/derived-data/outcomes.csv'
+output_outcomes = script_dir / 'data/derived-data/outcomes.csv'
 
 ghgp_20 = ghgp.sort_values(by="Total Direct Emissions", ascending=False).head(20).reset_index().copy()
 top_20 = ghgp_20["County"].unique()
@@ -335,25 +339,132 @@ outcomes.to_csv(output_outcomes, index=False)
 
 ```{python}
 # Statewide emissions graph
+ghgp_data_path = script_dir / 'data/raw-data/ghgp_data_2021.xlsx'
+outcomes_data_path = script_dir / 'data/derived-data/outcomes.csv'
 
 
+ghgp = pd.read_excel(ghgp_data_path)
+outcomes = pd.read_csv(outcomes_data_path)
+
+color_palette = [
+    "#041556", # 
+    "#748dc6", # 
+    "#c3e8ff", # 
+    "#601414", # 
+    "#c48f8f"  # 
+]
+
+health_long = outcomes.melt(
+    id_vars="County",
+    value_vars=[
+        "Asthma Incidence",
+        "COPD Deaths",
+        "COVID Deaths",
+        "Heart Failures",
+        "Stroke Deaths",
+    ],
+    var_name="Health Outcome",
+    value_name="Rate"
+)
+
+#Data Cleaning
+
+ghgp = ghgp.iloc[3:].reset_index(drop=True)
+
+ghgp = ghgp[["Unnamed: 4", "Unnamed: 7", "Unnamed: 8", "Unnamed: 9", "Unnamed: 13"]]
+ghgp.rename(columns={"Unnamed: 4": "State", "Unnamed: 7": "County", "Unnamed: 8": "Latitude", "Unnamed: 9": "Longitude", "Unnamed: 13": "Total Direct Emissions"}, inplace=True)
+
+ghgp = ghgp[ghgp["State"] == "IL"]
+ghgp = ghgp.dropna()
+
+ghgp["County"] = (ghgp["County"]
+                  .astype(str)
+                  .str.strip()
+                  .str.lower()
+                  .str.replace(r"county.*$", "", regex=True)
+                  .str.replace(r"\s+", " ", regex=True)
+                  .str.strip()
+                  .str.title()
+)
+
+ghgp = ghgp.groupby("County", as_index=False).agg({
+    "Total Direct Emissions": "sum",
+    "Latitude": "mean",
+    "Longitude": "mean"
+})
+
+ghgp = ghgp[ghgp["County"] != "Lasalle"]
+
+#Data Graphing
+
+heat_chart = alt.Chart(health_long).mark_rect().encode(
+    x=alt.X("County:N", title="Counties", sort=None),
+    y=alt.Y("Rate:Q", title="Death/Incidence Rates"),
+    color=alt.Color("Health Outcome:N",
+                    scale=alt.Scale(range=color_palette),
+                    title="Health Outcome"),
+    tooltip=["County", "Rate", "Health Outcome"]
+).properties(
+   width=400,
+   height=200,
+    title="Health Outcomes Rates by County from Most to Least (Top 20 Carbon Emitting in Illinois)"
+)
+
+heat_chart
 
 ```
 
 
 ```{python}
 # AQI bar graph
+data_path = script_dir / 'data/raw-data/daily_aqi_by_county_2025.csv'
+aqi = pd.read_csv(data_path)
 
+color_palette = [
+    "#041556", # 
+    "#748dc6", # 
+    "#c3e8ff", # 
+    "#601414", # 
+    "#c48f8f"  # 
+]
 
+#Data Cleaning
+
+aqi = aqi[["State Name", "county Name", "AQI", "Defining Parameter"]]
+aqi.rename(columns={"State Name": "State", "county Name": "County"}, inplace=True)
+
+aqi = aqi[aqi["State"] == "Illinois"]
+
+aqi = aqi.groupby(["County", "Defining Parameter"], as_index=False).agg({"AQI": "mean"})
+
+#Data Graphing
+
+aqi_chart = alt.Chart(aqi).mark_bar().encode(
+    x=alt.X("County:N", title="Counties in Illinois"),
+    y=alt.Y("AQI:Q", title="Air Quality Index (AQI)"),
+    color=alt.Color("Defining Parameter:N",
+                    scale=alt.Scale(range=color_palette),
+                    legend=alt.Legend(title="Defining Parameters")),
+    tooltip=[
+        alt.Tooltip("County:N"),
+        alt.Tooltip("AQI:Q"),
+        alt.Tooltip("Defining Parameter:N")
+    ]
+).properties(
+    width=400,
+    height=200,
+    title="AQI of Illinois Counties by Defining Parameters"
+).interactive()
+
+aqi_chart
 ```
 
 
 
 ```{python}
 # Cancer incidence bar graph
-script_dir = Path(__file__).parent
-data_path = script_dir / '../data/derived-data/combined_cancer_by_county.csv'
-output_path = script_dir / '../data/derived-data/cancertype_bar.png'
+data_path = script_dir / 'data/derived-data/combined_cancer_by_county.csv'
+output_path = script_dir / 'data/derived-data/cancertype_bar.png'
 
 df = pd.read_csv(data_path)
 
@@ -384,21 +495,23 @@ foreground = base.mark_bar(
     size=40
 )
 
-chart2 = background + foreground
-chart2.properties(width=600, height=400, title='Cancer Incidence in Illinois by Type').save(output_path)
+chart = background + foreground
+chart.properties(
+    width=400, 
+    height=200, 
+    title='Cancer Incidence in Illinois by Type').show()
 ```
 
 
 
 ```{python}
 # Cancer-emissions scatterplot
-script_dir = Path(__file__).parent
-output_path = script_dir / '../data/derived-data/emissions-cancer_scatter.png'
+output_path = script_dir / 'data/derived-data/emissions-cancer_scatter.png'
 
-cancer_data_path = script_dir / '../data/derived-data/combined_cancer_by_county.csv'
+cancer_data_path = script_dir / 'data/derived-data/combined_cancer_by_county.csv'
 cancer_df = pd.read_csv(cancer_data_path)
 
-pop_data_path=script_dir / '../data/derived-data/population.csv'
+pop_data_path=script_dir / 'data/derived-data/population.csv'
 pop_df = pd.read_csv(pop_data_path)
 
 cancer_df["Cancer Type"] = (
@@ -412,7 +525,7 @@ cancer_rates_df = cancer_df.merge(pop_df, on='County', how="outer")
 cancer_rates_df = cancer_rates_df.dropna()
 cancer_rates_df["Incidence Rate"] = (cancer_rates_df["Incidence"] / cancer_rates_df["Population"]) * 100
 
-ghgp_data_path = script_dir / '../data/derived-data/ghgp.csv'
+ghgp_data_path = script_dir / 'data/derived-data/ghgp.csv'
 emissions_df = pd.read_csv(ghgp_data_path)
 
 ghgp_20 = emissions_df.sort_values(by="Total Direct Emissions", ascending=False).head(20).reset_index().copy()
@@ -425,7 +538,7 @@ cancer_emissions_df["County"].nunique()
 
 cancer_emissions_df.sort_values(by=["Incidence", "Total Direct Emissions"], ascending=False)
 
-scatter = alt.Chart(cancer_emissions_df).mark_circle(filled=True, size=50).encode(
+scatter = alt.Chart(cancer_emissions_df).mark_circle(filled=True, size=20).encode(
     y=alt.Y("Incidence Rate:Q", title="Cancer Incidence"),
     x=alt.X("Total Direct Emissions:Q", title="Total Direct Emissions"),
     color=alt.Color(
@@ -434,11 +547,9 @@ scatter = alt.Chart(cancer_emissions_df).mark_circle(filled=True, size=50).encod
         scale=alt.Scale(range=[
     "#EAAA00", "#275D38", "#007396",
     "#59315F", "#A4343A"]))
-).properties(
-    width=500,
-    height=600,
-    title="Cancer Incidence and Total Direct Emissions")
+).properties(title="Cancer Incidence and Total Direct Emissions")
 scatter.save(output_path)
+scatter
 ```
 
 
@@ -446,17 +557,16 @@ scatter.save(output_path)
 
 ```{python}
 # Cancer and emissions small multiples choropleths 
-script_dir = Path(__file__).parent
-output_path = script_dir / '../data/derived-data/county_map.png'
+output_path = script_dir / 'data/derived-data/county_map.png'
 
-geo_data_path = script_dir / '../data/raw-data/Illinois_Counties.geojson'
+geo_data_path = script_dir / 'data/raw-data/Illinois_Counties.geojson'
 il_gdf = gpd.read_file(geo_data_path)
 il_gdf.head()
 
-ghgp_data_path = script_dir / '../data/derived-data/ghgp.csv'
+ghgp_data_path = script_dir / 'data/derived-data/ghgp.csv'
 emissions_df = pd.read_csv(ghgp_data_path)
 
-cancer_data_path = script_dir / '../data/derived-data/combined_cancer_by_county.csv'
+cancer_data_path = script_dir / 'data/derived-data/combined_cancer_by_county.csv'
 cancer_df = pd.read_csv(cancer_data_path)
 cancer_df['County'] = cancer_df['County'].str.lower()
 
@@ -467,7 +577,7 @@ cancer_emissions_gdf = cancer_gdf.merge(emissions_df, on='County', how="outer")
 
 
 # Side by side comparison
-fig, axes = plt.subplots(1, 2, figsize=(12, 8))
+fig, axes = plt.subplots(1, 2, figsize=(10, 6))
 
 # Left: Cancer Incidence
 inc_values = cancer_emissions_gdf["Incidence"].dropna()
@@ -530,7 +640,7 @@ cbar_right.ax.yaxis.get_major_formatter().set_scientific(False)
 cbar_right.ax.yaxis.get_major_formatter().set_useOffset(False)
 
 fig.suptitle("Cancer Incidence vs Total Direct Emissions",
-             fontsize=16, y=0.98, x=0.58)
+             fontsize=14, y=0.98, x=0.58)
 
 plt.savefig(output_path)
 ```
