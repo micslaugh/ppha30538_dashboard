@@ -56,8 +56,8 @@ ghgp = ghgp[ghgp["County"] != "Lasalle"]
 
 #Data Graphing
 
-heat_chart = alt.Chart(health_long).mark_rect().encode(
-    x=alt.X("County:N", title="Counties", sort=None),
+bar_chart = alt.Chart(health_long).mark_bar().encode(
+    x=alt.X("County:N", title="Counties", sort=alt.SortField("Rate", order="descending")),
     y=alt.Y("Rate:Q", title="Death/Incidence Rates"),
     color=alt.Color("Health Outcome:N",
                     scale=alt.Scale(range=color_palette),
@@ -69,4 +69,4 @@ heat_chart = alt.Chart(health_long).mark_rect().encode(
     title="Health Outcomes Rates by County from Most to Least (Top 20 Carbon Emitting in Illinois)"
 )
 
-heat_chart
+bar_chart
