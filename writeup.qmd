@@ -1,0 +1,537 @@
+---
+title: "Final Project Write Up"
+author: "Micah Slaughter, Jonathan Kacvinsky"
+date: "4 March 2025"
+format: 
+  pdf:
+    include-in-header: 
+       text: |
+         \usepackage{fvextra}
+         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+include-before-body:
+  text: |
+    \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
+      showspaces = false,
+      showtabs = false,
+      breaksymbolleft={},
+      breaklines
+    }
+output:
+  echo: false
+  eval: false
+execute: 
+  echo: false
+---
+
+Micah Slaughter (micslaugh) and Jonathan Kacvinsky (kacvinsky11), section 2 - Monday/Wednesday 10:30-11:50
+
+# Do Illinois counties with higher carbon emissions show worse health outcomes?
+
+```{python}
+import geopandas as gpd
+import pandas as pd
+from pathlib import Path
+from shapely import wkt
+import numpy as np
+import altair as alt 
+import streamlit as st
+from matplotlib.ticker import ScalarFormatter
+import matplotlib.colors as mcolors
+import matplotlib.colorbar as mcolorbar
+
+import warnings 
+warnings.filterwarnings('ignore')
+alt.renderers.enable("png")
+alt.data_transformers.disable_max_rows()
+
+# improve graph resolution
+import tempfile 
+from IPython.display import SVG, display, Image
+import vl_convert as vlc
+
+def display_altair_png(chart, scale=2):
+    """
+    Render an Altair chart to a PNG and display it inline.
+
+    Parameters
+    ----------
+    chart : altair.Chart
+        Altair chart object to render.
+    scale : int, optional
+        Resolution scaling factor for the PNG (default = 2). Use scale=2 for standard slides. Use scale = 3–4 for dense figures or PDF exports.
+    """
+    png_bytes = vlc.vegalite_to_png(chart.to_dict(), scale=scale)
+
+    # Write to a temporary PNG file and display
+    with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+        tmp.write(png_bytes)
+        tmp.flush()
+        display(Image(filename=tmp.name))
+
+script_dir = Path(__file__).parent
+
+#Preprocessing script
+
+# Creating single file of emissions related cancers by county for 2016-2020  
+files = [
+    "lung-bronch_cancer",
+    "breast_cancer",
+    "colorectal_cancer",
+    "kidney_cancer",
+    "bladder_cancer"]
+
+cancer_df = pd.DataFrame()
+
+for file in files:
+    raw_cancer = script_dir / f"../data/raw-data/{file}.csv"
+    output_cancer = script_dir / f"../data/derived-data/{file}_filtered.csv"
+    
+    df = pd.read_csv(raw_cancer)
+
+    cancer_col = df.columns[6]
+
+    df = df[["CountyFIPS", "County", cancer_col]]
+    
+    df = df.rename(columns={cancer_col: file})
+    
+    if cancer_df.empty:
+        cancer_df = df
+    else:
+        cancer_df = pd.merge(cancer_df, df, on=["CountyFIPS", "County"], how="outer")
+
+# Preparing cancer file for plotting
+columns = [
+    'lung-bronch_cancer',
+    'breast_cancer',
+    'colorectal_cancer',
+    'kidney_cancer',
+    'bladder_cancer']
+
+# Replace "Suppressed" with NaN for blank county values
+cancer_df[columns] = cancer_df[columns].replace("Suppressed", np.nan)
+cancer_df[columns] = cancer_df[columns].apply(pd.to_numeric, errors='coerce')
+
+# Reshape to tidy dataset
+cancer_df = cancer_df.melt(
+    id_vars=['CountyFIPS', 'County'],
+    value_vars=columns,
+    var_name='Cancer Type',
+    value_name='Incidence')
+
+final_output = script_dir / "../data/derived-data/combined_cancer_by_county.csv"
+
+cancer_df.to_csv(final_output, index=False) 
+
+# Cleaning crude prevalence of COPD by county
+raw_copd = script_dir / '../data/raw-data/crude_COPD.csv'
+output_copd = script_dir / '../data/derived-data/COPD_filtered.csv'
+
+copd_df = pd.read_csv(raw_copd)
+
+copd_filtered = copd_df[["CountyFIPS", "County", "Year", "Value"]]
+
+copd_filtered.to_csv(output_copd, index=False)
+
+# Cleaning crude prevalance of asthma by county
+raw_asthma = script_dir / '../data/raw-data/crude_asthma.csv'
+output_asthma = script_dir / '../data/derived-data/asthma_filtered.csv'
+
+asthma_df = pd.read_csv(raw_asthma)
+
+asthma_filtered = asthma_df[["CountyFIPS", "County", "Year", "Value"]]
+
+asthma_filtered.to_csv(output_asthma, index=False)
+
+# Loading carbon emissions file
+
+raw_ghgp = script_dir / '../data/raw-data/ghgp_data_2021.xlsx'
+output_ghgp = script_dir / '../data/derived-data/ghgp.csv'
+
+# Cleaning carbon emissions
+
+ghgp = pd.read_excel(raw_ghgp)
+
+ghgp = ghgp.iloc[3:].reset_index(drop=True)
+
+ghgp = ghgp[["Unnamed: 4", "Unnamed: 7", "Unnamed: 8", "Unnamed: 9", "Unnamed: 13"]]
+ghgp.rename(columns={"Unnamed: 4": "State", "Unnamed: 7": "County", "Unnamed: 8": "Latitude", "Unnamed: 9": "Longitude", "Unnamed: 13": "Total Direct Emissions"}, inplace=True)
+
+ghgp = ghgp[ghgp["State"] == "IL"]
+ghgp = ghgp.dropna()
+
+ghgp["County"] = (ghgp["County"]
+                  .astype(str)
+                  .str.strip()
+                  .str.lower()
+                  .str.replace(r"county.*$", "", regex=True)
+                  .str.replace(r"\s+", " ", regex=True)
+                  .str.strip()
+                  .str.title()
+)
+
+ghgp = ghgp.groupby("County", as_index=False).agg({
+    "Total Direct Emissions": "sum",
+    "Latitude": "mean",
+    "Longitude": "mean"
+})
+
+ghgp = ghgp[ghgp["County"] != "Lasalle"]
+
+ghgp.to_csv(output_ghgp, index=False)
+
+# Loading AQI file
+
+raw_aqi = script_dir / '../data/raw-data/daily_aqi_by_county_2025.csv'
+output_aqi = script_dir / '../data/derived-data/aqi.csv'
+
+# Cleaning AQI file
+
+aqi = pd.read_csv(raw_aqi)
+
+aqi = aqi[["State Name", "county Name", "AQI", "Defining Parameter"]]
+aqi.rename(columns={"State Name": "State", "county Name": "County"}, inplace=True)
+
+aqi = aqi[aqi["State"] == "Illinois"]
+
+aqi = aqi.groupby(["County", "Defining Parameter"], as_index=False).agg({"AQI": "mean"})
+
+aqi.to_csv(output_aqi, index=False)
+
+# Loading Stroke file
+
+raw_stroke = script_dir / '../data/raw-data/heart_stroke_mortality.csv'
+output_stroke = script_dir / '../data/derived-data/stroke.csv'
+
+# Cleaning Stroke file
+
+stroke = pd.read_csv(raw_stroke)
+
+stroke = stroke[stroke["Year"] == "2019"]
+stroke = stroke[stroke["Topic"] == "All stroke"]
+
+stroke = stroke[["Year", "LocationAbbr", "LocationDesc", "Topic", "Data_Value"]]
+stroke.rename(columns={"LocationAbbr": "State", "LocationDesc": "County"}, inplace=True)
+
+stroke = stroke.dropna()
+stroke = stroke.groupby("County", as_index=False).agg({"Data_Value": "sum"})
+
+stroke.to_csv(output_stroke, index=False)
+
+# Loading Heart file
+
+raw_heart = script_dir / '../data/raw-data/heart_stroke_mortality.csv'
+output_heart = script_dir / '../data/derived-data/heart.csv'
+
+# Cleaning Heart file
+
+heart = pd.read_csv(raw_heart)
+
+heart = heart[heart["Year"] == "2019"]
+heart = heart[heart["Topic"] == "All heart disease"]
+
+heart = heart[["Year", "LocationAbbr", "LocationDesc", "Topic", "Data_Value"]]
+heart.rename(columns={"LocationAbbr": "State", "LocationDesc": "County"}, inplace=True)
+
+heart = heart.dropna()
+heart = heart.groupby("County", as_index=False).agg({"Data_Value": "sum"})
+
+heart.to_csv(output_heart, index=False)
+
+# Loading COVID file
+
+raw_covid = script_dir / '../data/raw-data/us-counties.csv'
+output_covid = script_dir / '../data/derived-data/covid.csv'
+
+# Cleaning COVID file
+
+cov = pd.read_csv(raw_covid)
+
+cov["Date"] = 2020
+
+cov = cov[["Date", "County", "State", "Deaths"]]
+
+cov = cov.groupby("County", as_index=False).agg({"Deaths": "sum"})
+
+cov.to_csv(output_covid, index=False)
+
+# Loading Population file
+
+raw_pop = script_dir / '../data/raw-data/population_illinois.xlsx'
+output_pop = script_dir / '../data/derived-data/population.csv'
+
+#Illinois Population by County
+
+pop = pd.read_excel(raw_pop)
+
+pop["County"] = (pop["County"]
+                  .astype(str)
+                  .str.strip()
+                  .str.lower()
+                  .str.replace(r"county.*$", "", regex=True)
+                  .str.replace(r"\s+", " ", regex=True)
+                  .str.replace(".", "")
+                  .str.strip()
+                  .str.title()
+)
+
+pop.to_csv(output_pop, index=False)
+
+output_outcomes = script_dir / '../data/derived-data/outcomes.csv'
+
+ghgp_20 = ghgp.sort_values(by="Total Direct Emissions", ascending=False).head(20).reset_index().copy()
+top_20 = ghgp_20["County"].unique()
+asthma_20 = asthma_filtered[asthma_filtered["County"].isin(top_20)].copy()
+copd_20 = copd_filtered[copd_filtered["County"].isin(top_20)].copy()
+covid_20 = cov[cov["County"].isin(top_20)].copy()
+heart_20 = heart[heart["County"].isin(top_20)].copy()
+stroke_20 = stroke[stroke["County"].isin(top_20)].copy()
+pop_20 = pop[pop["County"].isin(top_20)].copy()
+"""Ranked carbon emissions by top 20 counties with highest direct emissions"""
+"""Subsetted every dataset to top 20"""
+
+asthma_20 = asthma_20.rename(columns={"Value": "Asthma Incidence"})
+copd_20 = copd_20.rename(columns={"Value": "COPD Deaths"})
+covid_20 = covid_20.rename(columns={"Deaths": "COVID Deaths"})
+heart_20 = heart_20.rename(columns={"Data_Value": "Heart Failures"})
+stroke_20 = stroke_20.rename(columns={"Data_Value": "Stroke Deaths"})
+
+ghgp_20 = ghgp_20[["County", "Total Direct Emissions"]]
+asthma_20 = asthma_20[["County", "Asthma Incidence"]]
+copd_20 = copd_20[["County", "COPD Deaths"]]
+"""Standardizing for merge"""
+
+outcomes = ghgp_20.copy()
+
+outcomes = outcomes.merge(asthma_20, on="County", how="left")
+outcomes = outcomes.merge(copd_20, on="County", how="left")
+outcomes = outcomes.merge(covid_20, on="County", how="left")
+outcomes = outcomes.merge(heart_20, on="County", how="left")
+outcomes = outcomes.merge(stroke_20, on="County", how="left")
+outcomes = outcomes.merge(pop_20, on="County", how="left")
+
+outcomes["Asthma Incidence"] = outcomes["Asthma Incidence"]
+outcomes["COPD Deaths"] = outcomes["COPD Deaths"]
+"""Removing % signs"""
+
+
+outcomes["COVID Deaths"] = outcomes["COVID Deaths"].astype(float)
+outcomes["Heart Failures"] = outcomes["Heart Failures"].astype(float)
+outcomes["Stroke Deaths"] = outcomes["Stroke Deaths"].astype(float)
+outcomes["Population"] = outcomes["Population"].astype(float)
+"""Standardizing dtype"""
+
+outcomes["COVID Deaths"] = round((outcomes["COVID Deaths"]/outcomes["Population"]) * 100, 2)
+outcomes["Heart Failures"] = round((outcomes["Heart Failures"]/outcomes["Population"]) * 100, 2)
+outcomes["Stroke Deaths"] = round((outcomes["Stroke Deaths"]/outcomes["Population"]) * 100, 2)
+"""Turning rest into percents"""
+
+outcomes["Asthma Incidence"] = outcomes["Asthma Incidence"].str.replace("%", "")
+outcomes["COPD Deaths"] = outcomes["COPD Deaths"].str.replace("%", "")
+"""Removing % to standardize"""
+                          
+outcomes.to_csv(output_outcomes, index=False)
+```
+
+
+```{python}
+# Statewide emissions graph
+
+
+
+```
+
+
+```{python}
+# AQI bar graph
+
+
+```
+
+
+
+```{python}
+# Cancer incidence bar graph
+script_dir = Path(__file__).parent
+data_path = script_dir / '../data/derived-data/combined_cancer_by_county.csv'
+output_path = script_dir / '../data/derived-data/cancertype_bar.png'
+
+df = pd.read_csv(data_path)
+
+df["Cancer Type"] = (
+    df["Cancer Type"]
+        .str.replace("_", " ", regex=False)
+        .str.replace("-bronch", "/Bronchus", regex=False)
+        .str.replace(" Cancer", "", regex=False)
+        .str.title())
+
+
+base = alt.Chart(df).encode(
+    x=alt.X('Cancer Type:N', sort=alt.SortField("Incidence", order='descending'), axis=alt.Axis(labelAngle=-45)),
+    y='Incidence:Q'
+)
+
+background = base.mark_bar(
+    color="#800000",
+    opacity=1,
+    stroke=None,
+    size=40
+)
+
+foreground = base.mark_bar(
+    color="#800000",
+    opacity=1,
+    stroke=None,
+    size=40
+)
+
+chart2 = background + foreground
+chart2.properties(width=600, height=400, title='Cancer Incidence in Illinois by Type').save(output_path)
+```
+
+
+
+```{python}
+# Cancer-emissions scatterplot
+script_dir = Path(__file__).parent
+output_path = script_dir / '../data/derived-data/emissions-cancer_scatter.png'
+
+cancer_data_path = script_dir / '../data/derived-data/combined_cancer_by_county.csv'
+cancer_df = pd.read_csv(cancer_data_path)
+
+pop_data_path=script_dir / '../data/derived-data/population.csv'
+pop_df = pd.read_csv(pop_data_path)
+
+cancer_df["Cancer Type"] = (
+    cancer_df["Cancer Type"]
+        .str.replace("_", " ", regex=False)
+        .str.replace("-bronch", "/Bronchus", regex=False)
+        .str.replace(" Cancer", "", regex=False)
+        .str.title())
+
+cancer_rates_df = cancer_df.merge(pop_df, on='County', how="outer")
+cancer_rates_df = cancer_rates_df.dropna()
+cancer_rates_df["Incidence Rate"] = (cancer_rates_df["Incidence"] / cancer_rates_df["Population"]) * 100
+
+ghgp_data_path = script_dir / '../data/derived-data/ghgp.csv'
+emissions_df = pd.read_csv(ghgp_data_path)
+
+ghgp_20 = emissions_df.sort_values(by="Total Direct Emissions", ascending=False).head(20).reset_index().copy()
+top_20 = ghgp_20["County"].unique()
+
+cancer_20 = cancer_rates_df[cancer_rates_df["County"].isin(top_20)].copy()
+
+cancer_emissions_df = cancer_20.merge(ghgp_20, on='County', how="outer")
+cancer_emissions_df["County"].nunique()
+
+cancer_emissions_df.sort_values(by=["Incidence", "Total Direct Emissions"], ascending=False)
+
+scatter = alt.Chart(cancer_emissions_df).mark_circle(filled=True, size=50).encode(
+    y=alt.Y("Incidence Rate:Q", title="Cancer Incidence"),
+    x=alt.X("Total Direct Emissions:Q", title="Total Direct Emissions"),
+    color=alt.Color(
+        "Cancer Type:N",
+        title="Cancer Type",
+        scale=alt.Scale(range=[
+    "#EAAA00", "#275D38", "#007396",
+    "#59315F", "#A4343A"]))
+).properties(
+    width=500,
+    height=600,
+    title="Cancer Incidence and Total Direct Emissions")
+scatter.save(output_path)
+```
+
+
+
+
+```{python}
+# Cancer and emissions small multiples choropleths 
+script_dir = Path(__file__).parent
+output_path = script_dir / '../data/derived-data/county_map.png'
+
+geo_data_path = script_dir / '../data/raw-data/Illinois_Counties.geojson'
+il_gdf = gpd.read_file(geo_data_path)
+il_gdf.head()
+
+ghgp_data_path = script_dir / '../data/derived-data/ghgp.csv'
+emissions_df = pd.read_csv(ghgp_data_path)
+
+cancer_data_path = script_dir / '../data/derived-data/combined_cancer_by_county.csv'
+cancer_df = pd.read_csv(cancer_data_path)
+cancer_df['County'] = cancer_df['County'].str.lower()
+
+cancer_gdf = il_gdf.merge(cancer_df, left_on="NAME_LC", right_on='County', how="left")
+
+emissions_df['County'] = emissions_df['County'].str.lower()
+cancer_emissions_gdf = cancer_gdf.merge(emissions_df, on='County', how="outer")
+
+
+# Side by side comparison
+fig, axes = plt.subplots(1, 2, figsize=(12, 8))
+
+# Left: Cancer Incidence
+inc_values = cancer_emissions_gdf["Incidence"].dropna()
+bounds_left = np.unique(inc_values.quantile(np.linspace(0, 1, 6)))
+if len(bounds_left) < 2:
+    bounds_left = np.array([bounds_left[0], bounds_left[0] + 1])
+
+cancer_emissions_gdf.boundary.plot(ax=axes[1], linewidth=0.2, edgecolor="black")
+cancer_emissions_gdf.plot(
+    ax=axes[0],
+    column="Incidence",
+    cmap="Blues",
+    linewidth=0.2,
+    edgecolor="black",
+    scheme="quantiles",
+    k=5,
+    legend=False)
+
+axes[0].set_title("Cancer Incidence")
+axes[0].set_axis_off()
+
+cbar_left = mcolorbar.ColorbarBase(
+    axes[0].inset_axes([1.05, 0.1, 0.03, 0.8]),
+    cmap=plt.cm.Blues,
+    norm=mcolors.BoundaryNorm(bounds_left, plt.cm.Blues.N),
+    orientation="vertical",
+    ticks=np.round(bounds_left, 0),
+    label="Incidence")
+
+# Right: Total Direct Emissions
+emissions_values = cancer_emissions_gdf["Total Direct Emissions"].dropna()
+bounds_right = np.unique(emissions_values.quantile(np.linspace(0, 1, 6)))
+if len(bounds_right) < 2:
+    bounds_right = np.array([bounds_right[0], bounds_right[0] + 1])
+
+cancer_emissions_gdf.boundary.plot(ax=axes[1], linewidth=0.2, edgecolor="black")
+cancer_emissions_gdf.plot(
+    ax=axes[1],
+    column="Total Direct Emissions",
+    cmap="Reds",
+    linewidth=0.2,
+    edgecolor="black",
+    scheme="quantiles",
+    k=5,
+    legend=False)
+
+axes[1].set_title("Total Direct Emissions")
+axes[1].set_axis_off()
+
+cbar_right = mcolorbar.ColorbarBase(
+    axes[1].inset_axes([1.05, 0.1, 0.03, 0.8]),
+    cmap=plt.cm.Reds,
+    norm=mcolors.BoundaryNorm(bounds_right, plt.cm.Reds.N),
+    orientation="vertical",
+    ticks=np.round(bounds_right, 2),
+    label="Total Direct Emissions")
+
+cbar_right.ax.yaxis.set_major_formatter(ScalarFormatter())
+cbar_right.ax.yaxis.get_major_formatter().set_scientific(False)
+cbar_right.ax.yaxis.get_major_formatter().set_useOffset(False)
+
+fig.suptitle("Cancer Incidence vs Total Direct Emissions",
+             fontsize=16, y=0.98, x=0.58)
+
+plt.savefig(output_path)
+```
+

@@ -1,0 +1,10 @@
+name: health_emissions
+channels:
+  - default
+dependencies:
+  - altair
+  - geopandas
+  - matplotlib
+  - pandas
+  - shapely
+  - streamlit
