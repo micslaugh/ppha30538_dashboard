@@ -7,8 +7,8 @@ DASHBOARD_DIR = "data/derived-data"
 HEALTH_FILE = {f"{DASHBOARD_DIR}/outcomes.csv"}
 AQI_FILE = {f"{DASHBOARD_DIR}/aqi.csv"}
 
-outcomes = pd.read_csv("outcomes.csv")
-aqi = pd.read_csv("daily_aqi_by_county_2025.csv")
+outcomes = pd.read_csv("data/derived-data/outcomes.csv")
+aqi = pd.read_csv("data/derived-data/aqi.csv")
 
 
 st.set_page_config(page_title="Illinois Emissions and Health Dashboard", layout="wide")
