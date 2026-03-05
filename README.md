@@ -29,30 +29,36 @@ conda env create -f environment.yml
 
 ```
 data/
-  raw-data/           # Raw data files
-    ghgp_data_2021.xlsx    # Carbon emissions data
-    bladder_cancer.csv		# Bladder cancer data
-    heart_stroke_mortality.csv  # Heart failure and stroke mortality data
-    breast_cancer.csv		# Breast cancer data
-    Illinois_Counties.geojson # Illinois county geo data
-    colorectal_cancer.csv		# Colorectal cancer data
-    kidney_cancer.csv # Kidney cancer data
-    crude_asthma.csv	#	Asthma data
-    lung-bronch_cancer.csv  # Lung and bronchus cancer data
-    crude_COPD.csv			# COPD data
-    population_illinois.xlsx  # Illinois population data
+  raw-data/                       # Raw data files
+    ghgp_data_2021.xlsx           # Carbon emissions data
+    bladder_cancer.csv	         	# Bladder cancer data
+    heart_stroke_mortality.csv    # Heart failure and stroke mortality data
+    breast_cancer.csv	          	# Breast cancer data
+    Illinois_Counties.geojson     # Illinois county geo data
+    colorectal_cancer.csv	      	# Colorectal cancer data
+    kidney_cancer.csv             # Kidney cancer data
+    crude_asthma.csv	            #	Asthma data
+    lung-bronch_cancer.csv        # Lung and bronchus cancer data
+    crude_COPD.csv		          	# COPD data
+    population_illinois.xlsx      # Illinois population data
     daily_aqi_by_county_2025.csv	# US AQI data
-    us-counties.csv #
-  derived-data/       # Filtered data and output plots
-    fire_filtered.gpkg  # Fire data filtered to post-2015
-    cpi_filtered.csv    # CPI data filtered to 2020 onwards
-code/                 # Data processing and plot creation 
-  preprocessing.qmd   # Organizes health data and cleans emissions and AQI data
-  cancer_graph.py			# Plots cancer incidence bar graph
-  county_map.py			  # Maps cancer incidence and emissions maps
-  emissions-cancer_scatter.py   # Plots cancer incidence and emissions scatter plot
-environment.yml	      # Defines required packages
-README.md             # Explains project structure
+    us-counties.csv               # Covid-19 cases and deaths by county
+  derived-data/                   # Filtered data and output plots
+    fire_filtered.gpkg            # Fire data filtered to post-2015
+    cpi_filtered.csv              # CPI data filtered to 2020 onwards
+code/                             # Data processing and plot creation 
+  preprocessing.qmd               # Organizes health data and cleans emissions and AQI data
+  aqi_graph.py			              # Plots air quality measurement by definig parameters
+  ghg_emissions.py                # Plots health outcome rates in top 20 highest emitting counties
+  cancer_graph.py			            # Plots cancer incidence bar graph
+  county_map.py			              # Maps cancer incidence and emissions maps
+  emissions-cancer_scatter.py     # Plots cancer incidence and emissions scatter plot
+streamlit-app/                    # Code required to run streamlit dashboard
+  dash_code.py                    # Python file with script to run streamlit dashboard
+environment.yml	                  # Defines required packages
+README.md                         # Explains project structure
+writeup.qmd                       # Full Quarto document for plot generation and discussion
+writeup.pdf                       # Knit PDF of plots and discussion
 ```
 
 
