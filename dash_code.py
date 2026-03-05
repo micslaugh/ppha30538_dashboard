@@ -65,7 +65,7 @@ if section == "Health Outcomes":
     health_select = health_long[health_long["Health Outcome"].isin(outcome_select)]
 
     if len(outcome_select) > 0:
-        carb_chart = alt.Chart(health_select).mark_line(point=True).encode(
+        carb_chart = alt.Chart(health_select).mark_rect().encode(
             x=alt.X("County:N", title="Counties", sort=None),
             y=alt.Y("Rate:Q", title="Death/Incidence Rates"),
             color=alt.Color("Health Outcome:N",
