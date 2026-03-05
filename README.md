@@ -79,7 +79,18 @@ Link to [dashboard](https://ppha30538dashboard-g7lvuvd2jxwfwpgg2mnhqb.streamlit.
 
 # Data Sources
 
-
+|Dataset|Source|Format|Description|
+|-------|------|------|-----------|
+|[Cancer Incidence](https://idph.illinois.gov/iscrstats/ZP/Show-ZP-Table.aspx)|Illinois Department of Public Health (IDPH)||Cancer incidence and mortality measured by year, ZIP code, cancer group, and sex|
+|[](https://ephtracking.cdc.gov/DataExplorer/?query=C7380B65-728D-4621-A122-47283CF8B444&G5=9999)||||
+|[]()||||
+|[]()||||
+|[]()||||
+|[AQI](https://aqs.epa.gov/aqsweb/airdata/download_files.html#AQI)|EPA||Annual summary data of airpollution, including air quality index by county in Illinois|
+|[Heart and Stroke](https://chronicdata.cdc.gov/Heart-Disease-Stroke-Prevention/Rates-and-Trends-in-Heart-Disease-and-Stroke-Morta/7b9s-s8ck/data_preview)|CDC||Rates and trends of heart diseases ands troke mortality among US adults by county, age, race, and sex|
+|[COVID-19](https://github.com/nytimes/covid-19-data/blob/master/us-counties.csv)|NY Times Github||COVID-19 deaths reported by counties in Illinois|
+|[Emissions](https://www.epa.gov/ghgreporting/ghgrp-2022-reported-data)|EPA||Categorizing emissions by greenhouse gas pollutant and by location|
+|[Population Totals](https://www.census.gov/data/datasets/time-series/demo/popest/2020s-counties-total.html)|United States Census Bureau||County population totals in Illinois|
 
 # Data Processing
 
