@@ -92,6 +92,8 @@ Link to [dashboard](https://ppha30538dashboard-g7lvuvd2jxwfwpgg2mnhqb.streamlit.
 
 # Data Processing
 
+code/preprocessing.py reads files from data/raw-data/ cleans using this code, and stores cleaned data into data/derived-data
+
 # Usage
 
 1. Run preprocessing to filter data:
