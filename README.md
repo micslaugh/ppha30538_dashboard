@@ -17,7 +17,9 @@ This project processes and visualizes carbon emissions by county in Illinois and
 3. Is there variation in carbon emissions to cancers correlated with lung infections?
 
 **Key Findings**
-
+> This exploratory analysis shows correlations with poor air quality and higher cancer incidence, asthma incidence, COPD deaths, COVID-19 deaths, heart failures, and stroke deaths
+> CO, NO<sub>2</sub>, and ozone contributed the most to poor air quality in the highest emitting counties
+> The highest emitting counties had a positive correlation of direct carbon emissions and more severe health outcomes
 
 # Setup
 
@@ -97,6 +99,13 @@ Link to [dashboard](https://ppha30538dashboard-g7lvuvd2jxwfwpgg2mnhqb.streamlit.
 |[Population Totals](https://www.census.gov/data/datasets/time-series/demo/popest/2020s-counties-total.html)|United States Census Bureau|xlsx|County population totals in Illinois|
 
 # Data Processing
+
+preprocessing.py contains information for how to:
++ Load datasets into the right file type
++ Remove unnecessary rows (irrelevant or missing information)
++ Rename columns to standardize data for merging
++ Grouping by relevant information to focus on relevant variables
++ Shaping data to tidy (long) format by melting data, to better visualize
 
 code/preprocessing.py reads files from data/raw-data/ cleans using this code, and stores cleaned data into data/derived-data
 
