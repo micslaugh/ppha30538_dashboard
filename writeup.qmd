@@ -2,20 +2,23 @@
 title: "Final Project Write Up"
 author: "Micah Slaughter, Jonathan Kacvinsky"
 date: "4 March 2025"
-format: 
+format:
   pdf:
-    include-in-header: 
-       text: |
-         \usepackage{fvextra}
-         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
-include-before-body:
-  text: |
-    \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
-      showspaces = false,
-      showtabs = false,
-      breaksymbolleft={},
-      breaklines
-    }
+    fontsize: 10pt
+    include-in-header:
+      text: |
+        \usepackage[margin=0.75in]{geometry}
+        \usepackage{titling}
+        \setlength{\droptitle}{-2em}
+        \setstretch{0.95}
+        \usepackage{fvextra}
+        \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+        \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
+          showspaces=false,
+          showtabs=false,
+          breaksymbolleft={},
+          breaklines
+        }
 output:
   echo: false
   eval: false
@@ -23,10 +26,11 @@ execute:
   echo: false
 execute-dir: project
 ---
-
 Micah Slaughter (micslaugh) and Jonathan Kacvinsky (kacvinsky11), section 2 - Monday/Wednesday 10:30-11:50
 
-# Do Illinois counties with higher carbon emissions show worse health outcomes?
+## Do Illinois counties with higher carbon emissions show worse health outcomes?
+
+This project is an exploratory examination of scope 1 and 2 carbon emissions on health outcomes across counties in Illinois. In 2025, the state of Illinois passed the Corporate Climate Accountability Act, which mandates more stringent tracking and reporting of carbon emissions. The bill establishes reporting standards for scope 1, 2, and 3 carbon emissions, which capture a more holistic measurement of pollution than previously required. In this data project, we aim to establish a baseline understanding of health status in Illinois under current scope 1 and 2 emissions levels to better measure the impact that increased carbon emissions reporting and regulation may have on statewide health outcomes. The data used capture both directly reported carbon emissions and air quality index data. Statewide health outcomes are reflected through cancer, asthma, and chronic obstructive pulmonary disease (COPD) incidence as well as severe complications for Covid-19, heart failure, and stroke. To more closely examine the relationship between carbon emissions and cancer incidence, the cancer data is constructed to include the 5 types of cancer shown to have the greatest linkage to pollutants and environmental factors. These types include bladder, breast, kidney, colorectal, and lung and bronchus cancers. For each health outcome category, there are data limitations to reporting both for the years of available data and for data privacy concerns to de-identify individuals. 
 
 ```{python}
 import geopandas as gpd
@@ -336,8 +340,9 @@ outcomes["COPD Deaths"] = outcomes["COPD Deaths"].str.replace("%", "")
 outcomes.to_csv(output_outcomes, index=False)
 ```
 
-
 ```{python}
+#| fig-align: center
+
 # Statewide emissions graph
 ghgp_data_path = script_dir / 'data/raw-data/ghgp_data_2021.xlsx'
 outcomes_data_path = script_dir / 'data/derived-data/outcomes.csv'
@@ -405,8 +410,8 @@ bar_chart = alt.Chart(health_long).mark_bar().encode(
                     title="Health Outcome"),
     tooltip=["County", "Rate", "Health Outcome"]
 ).properties(
-    width=600,
-    height=400,
+    width=400,
+    height=200,
     title="Health Outcomes Rates by County from Most to Least (Top 20 Carbon Emitting in Illinois)"
 )
 
@@ -414,8 +419,10 @@ bar_chart
 
 ```
 
+This graph is structured so that the 20 counties with the highest carbon emissions in Illinois are denoted from left to right, with the left representing the county with the highest emissions. Asthma incidence, COPD deaths, COVID deaths, heart failures, and stroke deaths are converted to percentage per county population to standardize variables. Each health outcome is depicted as a bar graph so that the viewer can visualize the relationship of health outcome and carbon emissions while concurrently comparing the prevalence of each result.
 
 ```{python}
+#| fig-align: center
 # AQI bar graph
 data_path = script_dir / 'data/raw-data/daily_aqi_by_county_2025.csv'
 aqi = pd.read_csv(data_path)
@@ -459,9 +466,10 @@ aqi_chart = alt.Chart(aqi).mark_bar().encode(
 aqi_chart
 ```
 
-
+Air pollutants are represented by the five most common pollutants: carbon monoxide (CO), nitrogen dioxide (NO2), Ozone, PM2.5, and PM10. This graph identifies patterns of pollutant levels and AQI measures of 20 randomly sampled Illinois counties, demonstrating how pollutants vary with air quality, depicting ozone has a pervasive contributor to AQI for counties with lower air quality indexes, and CO and NO2 being more prominent when AQI is high.
 
 ```{python}
+#| fig-align: center
 # Cancer incidence bar graph
 data_path = script_dir / 'data/derived-data/combined_cancer_by_county.csv'
 output_path = script_dir / 'data/derived-data/cancertype_bar.png'
@@ -502,9 +510,10 @@ chart.properties(
     title='Cancer Incidence in Illinois by Type').show()
 ```
 
-
+Incidence of the top 5 environmentally linked cancer types across counties in Illinois. This graph establishes the prevalence of some forms of cancer over others. Breast and lung and bronchus cancers show the highest prevalence in the state and are the two cancer forms with the most substantial medical research linking their development with pollution and carbon emissions. Due to data reporting requirements, it is not possible to report all cancer diagnoses in all counties, so looking at the statewide aggregate provides the best visualization for understanding variation among the prevalence of different types of environmentally linked cancers.
 
 ```{python}
+#| fig-align: center
 # Cancer-emissions scatterplot
 output_path = script_dir / 'data/derived-data/emissions-cancer_scatter.png'
 
@@ -547,15 +556,16 @@ scatter = alt.Chart(cancer_emissions_df).mark_circle(filled=True, size=20).encod
         scale=alt.Scale(range=[
     "#EAAA00", "#275D38", "#007396",
     "#59315F", "#A4343A"]))
-).properties(title="Cancer Incidence and Total Direct Emissions")
-scatter.save(output_path)
+).properties(title="Cancer Incidence and Total Direct Emissions", width=250, height=200)
 scatter
 ```
 
-
-
+Rates of each of the 5 environmentally linked cancers by direct carbon emissions for the top 20 highest polluting counties in Illinois. The plot shows a faint trend across all combined types of cancer, but illustrates stronger relationships between emissions and the rates of the selected cancer types. Among the 5 cancer types, lung and bronchus cancer shows the strongest relationship with the weakest trend falling along the rates of bladder cancer and emissions. These findings tie back to our research question by examining environmentally related cancer rates in the highest carbon emitting counties in the state, which allows us to better establish a baseline trend for both cancer rates and levels of scope 1 and 2 emissions in these areas.
 
 ```{python}
+#| fig-width: 2.7
+#| fig-height: 1.62
+#| fig-align: center
 # Cancer and emissions small multiples choropleths 
 output_path = script_dir / 'data/derived-data/county_map.png'
 
@@ -577,7 +587,7 @@ cancer_emissions_gdf = cancer_gdf.merge(emissions_df, on='County', how="outer")
 
 
 # Side by side comparison
-fig, axes = plt.subplots(1, 2, figsize=(10, 6))
+fig, axes = plt.subplots(1, 2, figsize=(5.6, 3.5))
 
 # Left: Cancer Incidence
 inc_values = cancer_emissions_gdf["Incidence"].dropna()
@@ -596,7 +606,7 @@ cancer_emissions_gdf.plot(
     k=5,
     legend=False)
 
-axes[0].set_title("Cancer Incidence")
+axes[0].set_title("Cancer Incidence", fontsize=9, loc="center")
 axes[0].set_axis_off()
 
 cbar_left = mcolorbar.ColorbarBase(
@@ -606,7 +616,8 @@ cbar_left = mcolorbar.ColorbarBase(
     orientation="vertical",
     ticks=np.round(bounds_left, 0),
     label="Incidence")
-
+cbar_left.ax.tick_params(labelsize=7)  
+cbar_left.ax.yaxis.label.set_size(8)
 # Right: Total Direct Emissions
 emissions_values = cancer_emissions_gdf["Total Direct Emissions"].dropna()
 bounds_right = np.unique(emissions_values.quantile(np.linspace(0, 1, 6)))
@@ -624,7 +635,7 @@ cancer_emissions_gdf.plot(
     k=5,
     legend=False)
 
-axes[1].set_title("Total Direct Emissions")
+axes[1].set_title("Total Direct Emissions", fontsize=9, loc='center')
 axes[1].set_axis_off()
 
 cbar_right = mcolorbar.ColorbarBase(
@@ -634,14 +645,16 @@ cbar_right = mcolorbar.ColorbarBase(
     orientation="vertical",
     ticks=np.round(bounds_right, 2),
     label="Total Direct Emissions")
+cbar_right.ax.tick_params(labelsize=7)  
+cbar_right.ax.yaxis.label.set_size(8)
 
 cbar_right.ax.yaxis.set_major_formatter(ScalarFormatter())
 cbar_right.ax.yaxis.get_major_formatter().set_scientific(False)
 cbar_right.ax.yaxis.get_major_formatter().set_useOffset(False)
-
-fig.suptitle("Cancer Incidence vs Total Direct Emissions",
-             fontsize=14, y=0.98, x=0.58)
-
 plt.savefig(output_path)
 ```
 
+Indicates geographic concentrations of combined 5 cancer types and carbon emissions for each county in Illinois. The maps display some expected variation in both cancer incidence and emissions levels through population concentration and proximity to urban areas. Suppressed values on the maps represent values which are either concealed for data de-identification in reporting or for lack of emissions reporting in a particular county. These side by side visualizations help us better understand which counties in Illinois may be most affected by emissions-related negative health outcomes.
+
+### Streamlit App
+The dashboard displays two interactive graphs. The default graph shows five negative health outcomes, asthma incidence, COPD deaths, COVID deaths, stroke deaths, and heart failure, tied to carbon emissions across the top 20 highest polluting counties in Illinois. Users may select any of the 5 outcomes from the sidebar menu to look at their values individually, or can view the default visualization showing all 5 measures across the counties. The second graph that users can select from the sidebar shows the air quality index measurements bar graph. Users can hover over the bars to view the air quality index measurement, county name, and defining parameter for each bar shown. The dashboard visualizations hint at how increased tracking and reporting standards for carbon emissions as a result of the Corporate Climate Accountability Act may inform our understanding of the relationship between public health and carbon emissions in Illinois.
