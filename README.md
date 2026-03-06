@@ -116,10 +116,23 @@ code/preprocessing.py reads files from data/raw-data/ cleans using this code, an
    python code/preprocessing.py
    ```
 
-2. Generate the fire perimeter plot:
+2. Generate the visualizations:
    ```bash
-   python code/plot_fires.py
+   python code/aqi_graph.py
+   python code/cancer_graph.py
+   python code/count_map.py
+   python code/emissions-cancer_scatter.py
+   python code/ghg_emissions.py
    ```
+   
+# Policy Implications
+
+By examining the relationship between carbon emissions, air quality, and health outcomes at the county level, this project identifies areas where air pollution and climate change may contribute to disproportionate health burdens, where policy intervention may be needed.
+
+These analysis' highlight patterns of direct carbon emissions to respiratory and cardiovascular risks, which helps determine which health conditions most associated with environmental risk.
+
+With this insight, we can inform policy makers and community health organizers where to target policy intervention, pollutant-specific regulation, and public health investment into high-exposure counties.
+
 # Limitations and Future Research
 
 + Data Reporting and Measurement
