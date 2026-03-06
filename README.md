@@ -63,19 +63,6 @@ writeup.qmd                       # Full Quarto document for plot generation and
 writeup.pdf                       # Knit PDF of plots and discussion
 ```
 
-
-# Usage
-
-1. Run preprocessing to filter data:
-   ```bash
-   python code/preprocessing.py
-   ```
-
-2. Generate the fire perimeter plot:
-   ```bash
-   python code/plot_fires.py
-   ```
-
 # Streamlit Dashboard
 **Please note** that dashboard may need time to wake up, be patient on first load.
 The interactive dashboard allows users to:
